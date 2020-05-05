@@ -302,6 +302,11 @@ PPGamp_D1_2_filtered_resampled_normal = PPGamp_D1_2_filtered_resampled_normal';
 PPGamp_D2_filtered_resampled_normal = PPGamp_D2_filtered_resampled_normal';
 PPGamp_D3_filtered_resampled_normal = PPGamp_D3_filtered_resampled_normal';
 
+%%
+% Now, we need to use the desired data to create iddata objects for model
+% identification
+%% Create single experiment iddata objects
+% Syntax: % data = iddata(y, u, Ts), where y is the output, u is the input,
+% and Ts is the sample time
 
-% modelingPrep_step2_v2
 
