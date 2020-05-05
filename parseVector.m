@@ -1,6 +1,6 @@
 % This (recursive) function will parse vectors based on provided info
 function [newTimeVector, newSignalVector, missingInitial, missingEnd] = ...
-    parseVector_v2(oldTimeVector, oldSignalVector, startTime, ...
+    parseVector(oldTimeVector, oldSignalVector, startTime, ...
     preBufferLength, timeLength, initialDataCount, endDataCount)
 
 % missingInitial: the amount of time not available at the beginning of the
@@ -87,21 +87,21 @@ end
 % If the endIndex and/or the initialIndex was/were still not found, we can
 % recursively search for good end and initial indices.
 
-% TO UNDERSTAND THIS PART OF THE CODE, DRAW IT OUT!!
+% TO UNDERSTAND THIS PART OF THE CODE, I RECOMMEND DRAWING IT OUT!!
 % THE SUBTRACTIONS WILL MAKE SENSE THEN :)
 % In case both were not found
 if endIndex == -1 && initialIndex == -1
     timeLength = timeLength - 2;
     preBufferLength = preBufferLength - 1;
     [newTimeVector, newSignalVector, missingInitial, missingEnd] = ...
-    parseVector_v2(oldTimeVector, oldSignalVector, startTime, ...
+    parseVector(oldTimeVector, oldSignalVector, startTime, ...
     preBufferLength, timeLength, initialDataCount + 1, endDataCount + 1);
     return
 % In case only the endIndex wasn't found
 elseif endIndex == -1
     timeLength = timeLength - 1;
    [newTimeVector, newSignalVector, missingInitial, missingEnd] = ...
-    parseVector_v2(oldTimeVector, oldSignalVector, startTime, ...
+    parseVector(oldTimeVector, oldSignalVector, startTime, ...
     preBufferLength, timeLength, initialDataCount, endDataCount + 1);
     return
 % In case only the initialIndex wasn't found
@@ -109,7 +109,7 @@ elseif initialIndex == -1
     preBufferLength = preBufferLength - 1;
     timeLength = timeLength - 1;
     [newTimeVector, newSignalVector, missingInitial, missingEnd] = ...
-    parseVector_v2(oldTimeVector, oldSignalVector, startTime, ...
+    parseVector(oldTimeVector, oldSignalVector, startTime, ...
     preBufferLength, timeLength, initialDataCount + 1, endDataCount);
     return
 end
