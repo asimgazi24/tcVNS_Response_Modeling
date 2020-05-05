@@ -1,4 +1,5 @@
-% This code requires that the signal processing toolbox be installed
+% This code requires that the signal processing  and system identification 
+% toolboxes be installed
 
 % This script prepares the example biomarker time series data for 
 % subsequent state-space modeling
