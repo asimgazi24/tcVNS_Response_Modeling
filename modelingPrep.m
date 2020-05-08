@@ -147,43 +147,47 @@ dt = 1;
 fs = 1/dt;
 
 % Resample using built-in function
+% From the documentation, resample assumes the endpoints are 0
+% This is clearly an incorrect assumption. Thus, to correct this,
+% we follow the 'Removing Endpoint Effects' section in the documentation:
+% https://www.mathworks.com/help/signal/examples/resampling-nonuniformly-sampled-signals.html
 % HR
 % Day 1
 % Unfiltered
-[HR_D1_1_resampled, tHR_D1_1_resampled] = resample(HR_D1_1, tHR_D1_1_shifted, fs);
-[HR_D1_2_resampled, tHR_D1_2_resampled] = resample(HR_D1_2, tHR_D1_2_shifted, fs);
+[HR_D1_1_resampled, tHR_D1_1_resampled] = clean_resample(HR_D1_1, tHR_D1_1_shifted, fs, 'spline');
+[HR_D1_2_resampled, tHR_D1_2_resampled] = clean_resample(HR_D1_2, tHR_D1_2_shifted, fs, 'spline');
 % Filtered
-[HR_D1_1_filtered_resampled, tHR_D1_1_filtered_resampled] = resample(HR_D1_1_filtered, tHR_D1_1_shifted, fs);
-[HR_D1_2_filtered_resampled, tHR_D1_2_filtered_resampled] = resample(HR_D1_2_filtered, tHR_D1_2_shifted, fs);
+[HR_D1_1_filtered_resampled, tHR_D1_1_filtered_resampled] = clean_resample(HR_D1_1_filtered, tHR_D1_1_shifted, fs, 'spline');
+[HR_D1_2_filtered_resampled, tHR_D1_2_filtered_resampled] = clean_resample(HR_D1_2_filtered, tHR_D1_2_shifted, fs, 'spline');
 % Day 2
 % Unfiltered
-[HR_D2_resampled, tHR_D2_resampled] = resample(HR_D2, tHR_D2_shifted, fs);
+[HR_D2_resampled, tHR_D2_resampled] = clean_resample(HR_D2, tHR_D2_shifted, fs, 'spline');
 % Filtered
-[HR_D2_filtered_resampled, tHR_D2_filtered_resampled] = resample(HR_D2_filtered, tHR_D2_shifted, fs);
+[HR_D2_filtered_resampled, tHR_D2_filtered_resampled] = clean_resample(HR_D2_filtered, tHR_D2_shifted, fs, 'spline');
 % Day 3
 % Unfiltered
-[HR_D3_resampled, tHR_D3_resampled] = resample(HR_D3, tHR_D3_shifted, fs);
+[HR_D3_resampled, tHR_D3_resampled] = clean_resample(HR_D3, tHR_D3_shifted, fs, 'spline');
 % Filtered
-[HR_D3_filtered_resampled, tHR_D3_filtered_resampled] = resample(HR_D3_filtered, tHR_D3_shifted, fs);
+[HR_D3_filtered_resampled, tHR_D3_filtered_resampled] = clean_resample(HR_D3_filtered, tHR_D3_shifted, fs, 'spline');
 
 % PPGamp
 % Day 1
 % Unfiltered
-[PPGamp_D1_1_resampled, tPPGamp_D1_1_resampled] = resample(PPGamp_D1_1, tPPGamp_D1_1_shifted, fs);
-[PPGamp_D1_2_resampled, tPPGamp_D1_2_resampled] = resample(PPGamp_D1_2, tPPGamp_D1_2_shifted, fs);
+[PPGamp_D1_1_resampled, tPPGamp_D1_1_resampled] = clean_resample(PPGamp_D1_1, tPPGamp_D1_1_shifted, fs, 'spline');
+[PPGamp_D1_2_resampled, tPPGamp_D1_2_resampled] = clean_resample(PPGamp_D1_2, tPPGamp_D1_2_shifted, fs, 'spline');
 % Filtered
-[PPGamp_D1_1_filtered_resampled, tPPGamp_D1_1_filtered_resampled] = resample(PPGamp_D1_1_filtered, tPPGamp_D1_1_shifted, fs);
-[PPGamp_D1_2_filtered_resampled, tPPGamp_D1_2_filtered_resampled] = resample(PPGamp_D1_2_filtered, tPPGamp_D1_2_shifted, fs);
+[PPGamp_D1_1_filtered_resampled, tPPGamp_D1_1_filtered_resampled] = clean_resample(PPGamp_D1_1_filtered, tPPGamp_D1_1_shifted, fs, 'spline');
+[PPGamp_D1_2_filtered_resampled, tPPGamp_D1_2_filtered_resampled] = clean_resample(PPGamp_D1_2_filtered, tPPGamp_D1_2_shifted, fs, 'spline');
 % Day 2
 % Unfiltered
-[PPGamp_D2_resampled, tPPGamp_D2_resampled] = resample(PPGamp_D2, tPPGamp_D2_shifted, fs);
+[PPGamp_D2_resampled, tPPGamp_D2_resampled] = clean_resample(PPGamp_D2, tPPGamp_D2_shifted, fs, 'spline');
 % Filtered
-[PPGamp_D2_filtered_resampled, tPPGamp_D2_filtered_resampled] = resample(PPGamp_D2_filtered, tPPGamp_D2_shifted, fs);
+[PPGamp_D2_filtered_resampled, tPPGamp_D2_filtered_resampled] = clean_resample(PPGamp_D2_filtered, tPPGamp_D2_shifted, fs, 'spline');
 % Day 3
 % Unfiltered
-[PPGamp_D3_resampled, tPPGamp_D3_resampled] = resample(PPGamp_D3, tPPGamp_D3_shifted, fs);
+[PPGamp_D3_resampled, tPPGamp_D3_resampled] = clean_resample(PPGamp_D3, tPPGamp_D3_shifted, fs, 'spline');
 % Filtered
-[PPGamp_D3_filtered_resampled, tPPGamp_D3_filtered_resampled] = resample(PPGamp_D3_filtered, tPPGamp_D3_shifted, fs);
+[PPGamp_D3_filtered_resampled, tPPGamp_D3_filtered_resampled] = clean_resample(PPGamp_D3_filtered, tPPGamp_D3_shifted, fs, 'spline');
 
 % Make sure all vectors are of appropriate length
 % If not, use interp1 to force it to be so
@@ -228,53 +232,53 @@ sampleTime_PPGamp_D3 = dt:dt:availableTime_PPGamp_D3;
 % HR
 if length(HR_D1_1_resampled) ~= availableTime_HR_D1_1
     HR_D1_1_resampled = interp1(tHR_D1_1_resampled, HR_D1_1_resampled, ...
-        sampleTime_HR_D1_1, 'linear');
+        sampleTime_HR_D1_1, 'spline');
     HR_D1_1_filtered_resampled = interp1(tHR_D1_1_filtered_resampled, ...
-        HR_D1_1_filtered_resampled, sampleTime_HR_D1_1, 'linear');
+        HR_D1_1_filtered_resampled, sampleTime_HR_D1_1, 'spline');
 end
 if length(HR_D1_2_resampled) ~= availableTime_HR_D1_2
     HR_D1_2_resampled = interp1(tHR_D1_2_resampled, HR_D1_2_resampled, ...
-        sampleTime_HR_D1_2, 'linear');
+        sampleTime_HR_D1_2, 'spline');
     HR_D1_2_filtered_resampled = interp1(tHR_D1_2_filtered_resampled, ...
-        HR_D1_2_filtered_resampled, sampleTime_HR_D1_2, 'linear');
+        HR_D1_2_filtered_resampled, sampleTime_HR_D1_2, 'spline');
 end
 if length(HR_D2_resampled) ~= availableTime_HR_D2
     HR_D2_resampled = interp1(tHR_D2_resampled, HR_D2_resampled, ...
-        sampleTime_HR_D2, 'linear');
+        sampleTime_HR_D2, 'spline');
     HR_D2_filtered_resampled = interp1(tHR_D2_filtered_resampled, ...
-        HR_D2_filtered_resampled, sampleTime_HR_D2, 'linear');
+        HR_D2_filtered_resampled, sampleTime_HR_D2, 'spline');
 end
 if length(HR_D3_resampled) ~= availableTime_HR_D3
     HR_D3_resampled = interp1(tHR_D3_resampled, HR_D3_resampled, ...
-        sampleTime_HR_D3, 'linear');
+        sampleTime_HR_D3, 'spline');
     HR_D3_filtered_resampled = interp1(tHR_D3_filtered_resampled, ...
-        HR_D3_filtered_resampled, sampleTime_HR_D3, 'linear');
+        HR_D3_filtered_resampled, sampleTime_HR_D3, 'spline');
 end
 
 % PPGamp
 if length(PPGamp_D1_1_resampled) ~= availableTime_PPGamp_D1_1
     PPGamp_D1_1_resampled = interp1(tPPGamp_D1_1_resampled, PPGamp_D1_1_resampled, ...
-        sampleTime_PPGamp_D1_1, 'linear');
+        sampleTime_PPGamp_D1_1, 'spline');
     PPGamp_D1_1_filtered_resampled = interp1(tPPGamp_D1_1_filtered_resampled, ...
-        PPGamp_D1_1_filtered_resampled, sampleTime_PPGamp_D1_1, 'linear');
+        PPGamp_D1_1_filtered_resampled, sampleTime_PPGamp_D1_1, 'spline');
 end
 if length(PPGamp_D1_2_resampled) ~= availableTime_PPGamp_D1_2
     PPGamp_D1_2_resampled = interp1(tPPGamp_D1_2_resampled, PPGamp_D1_2_resampled, ...
-        sampleTime_PPGamp_D1_2, 'linear');
+        sampleTime_PPGamp_D1_2, 'spline');
     PPGamp_D1_2_filtered_resampled = interp1(tPPGamp_D1_2_filtered_resampled, ...
-        PPGamp_D1_2_filtered_resampled, sampleTime_PPGamp_D1_2, 'linear');
+        PPGamp_D1_2_filtered_resampled, sampleTime_PPGamp_D1_2, 'spline');
 end
 if length(PPGamp_D2_resampled) ~= availableTime_PPGamp_D2
     PPGamp_D2_resampled = interp1(tPPGamp_D2_resampled, PPGamp_D2_resampled, ...
-        sampleTime_PPGamp_D2, 'linear');
+        sampleTime_PPGamp_D2, 'spline');
     PPGamp_D2_filtered_resampled = interp1(tPPGamp_D2_filtered_resampled, ...
-        PPGamp_D2_filtered_resampled, sampleTime_PPGamp_D2, 'linear');
+        PPGamp_D2_filtered_resampled, sampleTime_PPGamp_D2, 'spline');
 end
 if length(PPGamp_D3_resampled) ~= availableTime_PPGamp_D3
     PPGamp_D3_resampled = interp1(tPPGamp_D3_resampled, PPGamp_D3_resampled, ...
-        sampleTime_PPGamp_D3, 'linear');
+        sampleTime_PPGamp_D3, 'spline');
     PPGamp_D3_filtered_resampled = interp1(tPPGamp_D3_filtered_resampled, ...
-        PPGamp_D3_filtered_resampled, sampleTime_PPGamp_D3, 'linear');
+        PPGamp_D3_filtered_resampled, sampleTime_PPGamp_D3, 'spline');
 end
 
 %% Normalize output vectors by appropriate resting values
