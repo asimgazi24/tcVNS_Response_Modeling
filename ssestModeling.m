@@ -9,6 +9,8 @@
 % 4. Select best lambda using min(AICc)
 % 5. Compute test fit percentages using compare()
 % 6. Store best model order, best input delay, and fit percentages
+% 7. Output values above to excel doc
+% 8. Save workspace
 
 % Recall that the "Test" in the variable names corresponds to the
 % administration that needs to be tested on
