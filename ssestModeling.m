@@ -122,18 +122,18 @@ end
 % D1_1
 [columnMin, RowIndices] = min(AICc_ssest_Test_D1_1_HR);
 [bestAICc_ssest_Test_D1_1_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_1_HR = minColumnIndex;
+bestInputDelay_ssest_Test_D1_1_HR = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D1_1_HR = RowIndices(minColumnIndex);
 
 [columnMin, RowIndices] = min(AICc_ssest_Test_D1_1_PPGamp);
 [bestAICc_ssest_Test_D1_1_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_1_PPGamp = minColumnIndex;
+bestInputDelay_ssest_Test_D1_1_PPGamp = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D1_1_PPGamp = RowIndices(minColumnIndex);
 
 % D1_2
 [columnMin, RowIndices] = min(AICc_ssest_Test_D1_2_HR);
 [bestAICc_ssest_Test_D1_2_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_2_HR = minColumnIndex;
+bestInputDelay_ssest_Test_D1_2_HR = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D1_2_HR = RowIndices(minColumnIndex);
 
 [columnMin, RowIndices] = min(AICc_ssest_Test_D1_2_PPGamp);
@@ -144,23 +144,23 @@ bestModelOrder_ssest_Test_D1_2_PPGamp = RowIndices(minColumnIndex);
 % D2
 [columnMin, RowIndices] = min(AICc_ssest_Test_D2_HR);
 [bestAICc_ssest_Test_D2_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D2_HR = minColumnIndex;
+bestInputDelay_ssest_Test_D2_HR = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D2_HR = RowIndices(minColumnIndex);
 
 [columnMin, RowIndices] = min(AICc_ssest_Test_D2_PPGamp);
 [bestAICc_ssest_Test_D2_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D2_PPGamp = minColumnIndex;
+bestInputDelay_ssest_Test_D2_PPGamp = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D2_PPGamp = RowIndices(minColumnIndex);
 
 % D3
 [columnMin, RowIndices] = min(AICc_ssest_Test_D3_HR);
 [bestAICc_ssest_Test_D3_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D3_HR = minColumnIndex;
+bestInputDelay_ssest_Test_D3_HR = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D3_HR = RowIndices(minColumnIndex);
 
 [columnMin, RowIndices] = min(AICc_ssest_Test_D3_PPGamp);
 [bestAICc_ssest_Test_D3_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D3_PPGamp = minColumnIndex;
+bestInputDelay_ssest_Test_D3_PPGamp = minColumnIndex - 1;
 bestModelOrder_ssest_Test_D3_PPGamp = RowIndices(minColumnIndex);
 
 
