@@ -9,3 +9,7 @@ modelingPrep
 % State-space modeling
 ssestModeling
 
+% Output Naive Predictor Fit Percentages
+naivePrediction_fitPercentages
+
+
