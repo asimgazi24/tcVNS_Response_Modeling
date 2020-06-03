@@ -1,4 +1,4 @@
-% This code requires that the signal processing  and system identification 
+% This code requires that the signal processing  and system identification
 % toolboxes be installed
 
 % This script performs all the state-space modeling steps:
@@ -23,7 +23,7 @@ sampleTime = 1;         % Sample time of iddata
 minDecade = -15;        % Chosen as minimum because eps = 2e-16 (approx.)
 maxDecade = 4;
 Lambda = zeros(1, (maxDecade - minDecade)*9 + 1);
-Lambda(1) = 10^minDecade; 
+Lambda(1) = 10^minDecade;
 
 for i = 2:length(Lambda)
     Lambda(i) = Lambda(i-1) + 10^floor(((i-2)/9) + minDecade);
@@ -39,73 +39,43 @@ stateSpaceOptions = ssestOptions('EnforceStability', true);
 
 % Here, I create a structure that has 2 accessible properties and then I
 % repeat that as a 2-D matrix maxModelOrder x maxInputDelay times
-ssest_Test_D1_1 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), maxModelOrder, maxInputDelay+1);
-ssest_Test_D1_2 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), maxModelOrder, maxInputDelay+1);
-ssest_Test_D2 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), maxModelOrder, maxInputDelay+1);
-ssest_Test_D3 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), maxModelOrder, maxInputDelay+1);
+ssest_Test = {};
+for i = 1:4
+    ssest_Test{i} = repmat(struct('HR',struct(idss),...
+        'PPGamp',struct(idss)), maxModelOrder, maxInputDelay+1);
+end
 
 %% Create arrays for AICc values so I can later select the best model
 % I need to save one AICc value for each model structure configuration
-AICc_ssest_Test_D1_1_HR = zeros(maxModelOrder, maxInputDelay+1);
-AICc_ssest_Test_D1_1_PPGamp = zeros(maxModelOrder, maxInputDelay+1);
-
-AICc_ssest_Test_D1_2_HR = zeros(maxModelOrder, maxInputDelay+1);
-AICc_ssest_Test_D1_2_PPGamp = zeros(maxModelOrder, maxInputDelay+1);
-
-AICc_ssest_Test_D2_HR = zeros(maxModelOrder, maxInputDelay+1);
-AICc_ssest_Test_D2_PPGamp = zeros(maxModelOrder, maxInputDelay+1);
-
-AICc_ssest_Test_D3_HR = zeros(maxModelOrder, maxInputDelay+1);
-AICc_ssest_Test_D3_PPGamp = zeros(maxModelOrder, maxInputDelay+1);
-
+AICc_ssest_Test_HR = {};
+AICc_ssest_Test_PPGamp = {};
+for dayCounter = 1:4
+    AICc_ssest_Test_HR{dayCounter} = zeros(maxModelOrder, maxInputDelay+1);
+    AICc_ssest_Test_PPGamp{dayCounter} = zeros(maxModelOrder, maxInputDelay+1);
+end
 
 %% Estimate all possible models for each biomarker of each administration and store AICc values
 % Nested for loop to iterate over all model orders and all input delays
 for i = 1:maxModelOrder
     for j = 0:maxInputDelay
-        % Estimate models using ssest() function for 
-        % N4SID estimation followed by prediction error minimization (PEM)
-        ssest_Test_D1_1(i, j+1).HR = ssest(Test_D1_1_HR, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        ssest_Test_D1_1(i, j+1).PPGamp = ssest(Test_D1_1_PPGamp, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        
-        ssest_Test_D1_2(i, j+1).HR = ssest(Test_D1_2_HR, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        ssest_Test_D1_2(i, j+1).PPGamp = ssest(Test_D1_2_PPGamp, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        
-        ssest_Test_D2(i, j+1).HR = ssest(Test_D2_HR, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        ssest_Test_D2(i, j+1).PPGamp = ssest(Test_D2_PPGamp, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        
-        ssest_Test_D3(i, j+1).HR = ssest(Test_D3_HR, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        ssest_Test_D3(i, j+1).PPGamp = ssest(Test_D3_PPGamp, i, stateSpaceOptions, ...
-            'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
-        
-        % Store AICc values
-        AICc_ssest_Test_D1_1_HR(i,j+1) =  ssest_Test_D1_1(i,j+1).HR.Report.Fit.AICc;
-        AICc_ssest_Test_D1_1_PPGamp(i,j+1) =  ssest_Test_D1_1(i,j+1).PPGamp.Report.Fit.AICc;
-        
-        AICc_ssest_Test_D1_2_HR(i,j+1) =  ssest_Test_D1_2(i,j+1).HR.Report.Fit.AICc;
-        AICc_ssest_Test_D1_2_PPGamp(i,j+1) =  ssest_Test_D1_2(i,j+1).PPGamp.Report.Fit.AICc;
-        
-        AICc_ssest_Test_D2_HR(i,j+1) =  ssest_Test_D2(i,j+1).HR.Report.Fit.AICc;
-        AICc_ssest_Test_D2_PPGamp(i,j+1) =  ssest_Test_D2(i,j+1).PPGamp.Report.Fit.AICc;
-        
-        AICc_ssest_Test_D3_HR(i,j+1) =  ssest_Test_D3(i,j+1).HR.Report.Fit.AICc;
-        AICc_ssest_Test_D3_PPGamp(i,j+1) =  ssest_Test_D3(i,j+1).PPGamp.Report.Fit.AICc;
-        
+        for dayCounter = 1:4
+            % Estimate models using ssest() function for
+            % N4SID estimation followed by prediction error minimization (PEM)
+            
+            ssest_Test{dayCounter}(i, j+1).HR = ssest(test_HR{dayCounter}, i, stateSpaceOptions, ...
+                'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
+            ssest_Test{dayCounter}(i, j+1).PPGamp = ssest(test_PPGamp{dayCounter}, i, stateSpaceOptions, ...
+                'InputDelay', j, 'Form', 'modal', 'Ts', sampleTime);
+            
+            AICc_ssest_Test_HR{dayCounter}(i,j+1) =  ssest_Test{dayCounter}(i,j+1).HR.Report.Fit.AICc;
+            AICc_ssest_Test_PPGamp{dayCounter}(i,j+1) =  ssest_Test{dayCounter}(i,j+1).PPGamp.Report.Fit.AICc;
+            
+            
+        end
         % Display model estimation status for user
         timeNow = datetime('now','TimeZone','local','Format','d-MMM-y HH:mm:ss Z');
-         disp(['Done with model order ', num2str(i), ' and input delay ',...
-             num2str(j), ' at ', datestr(timeNow)])
+        disp(['Done with model order ', num2str(i), ' and input delay ',...
+            num2str(j), ' at ', datestr(timeNow)])
     end
 end
 
@@ -118,79 +88,43 @@ end
 % index associated with that minimum column index will give you the
 % minRowIndex, i.e., the best model order, because the row indices vector
 % would have already stored the associated row indices for each columnMin
+bestInputDelay_ssest_Test_HR = {};
+bestInputDelay_ssest_Test_PPGamp = {};
+bestModelOrder_ssest_Test_HR = {};
+bestModelOrder_ssest_Test_PPGamp = {};
+bestAICc_ssest_Test_HR = {};
+bestAICc_ssest_Test_PPGamp = {};
 
-% D1_1
-[columnMin, RowIndices] = min(AICc_ssest_Test_D1_1_HR);
-[bestAICc_ssest_Test_D1_1_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_1_HR = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D1_1_HR = RowIndices(minColumnIndex);
-
-[columnMin, RowIndices] = min(AICc_ssest_Test_D1_1_PPGamp);
-[bestAICc_ssest_Test_D1_1_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_1_PPGamp = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D1_1_PPGamp = RowIndices(minColumnIndex);
-
-% D1_2
-[columnMin, RowIndices] = min(AICc_ssest_Test_D1_2_HR);
-[bestAICc_ssest_Test_D1_2_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_2_HR = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D1_2_HR = RowIndices(minColumnIndex);
-
-[columnMin, RowIndices] = min(AICc_ssest_Test_D1_2_PPGamp);
-[bestAICc_ssest_Test_D1_2_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D1_2_PPGamp = minColumnIndex;
-bestModelOrder_ssest_Test_D1_2_PPGamp = RowIndices(minColumnIndex);
-
-% D2
-[columnMin, RowIndices] = min(AICc_ssest_Test_D2_HR);
-[bestAICc_ssest_Test_D2_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D2_HR = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D2_HR = RowIndices(minColumnIndex);
-
-[columnMin, RowIndices] = min(AICc_ssest_Test_D2_PPGamp);
-[bestAICc_ssest_Test_D2_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D2_PPGamp = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D2_PPGamp = RowIndices(minColumnIndex);
-
-% D3
-[columnMin, RowIndices] = min(AICc_ssest_Test_D3_HR);
-[bestAICc_ssest_Test_D3_HR, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D3_HR = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D3_HR = RowIndices(minColumnIndex);
-
-[columnMin, RowIndices] = min(AICc_ssest_Test_D3_PPGamp);
-[bestAICc_ssest_Test_D3_PPGamp, minColumnIndex] = min(columnMin);
-bestInputDelay_ssest_Test_D3_PPGamp = minColumnIndex - 1;
-bestModelOrder_ssest_Test_D3_PPGamp = RowIndices(minColumnIndex);
+for dayCounter = 1:4
+    [columnMin, RowIndices] = min(AICc_ssest_Test_HR{dayCounter});
+    [bestAICc_ssest_Test_HR{dayCounter}, minColumnIndex] = min(columnMin);
+    bestInputDelay_ssest_Test_HR{dayCounter} = minColumnIndex - 1;
+    bestModelOrder_ssest_Test_HR{dayCounter} = RowIndices(minColumnIndex);
+    
+    [columnMin, RowIndices] = min(AICc_ssest_Test_PPGamp{dayCounter});
+    [bestAICc_ssest_Test_PPGamp{dayCounter}, minColumnIndex] = min(columnMin);
+    bestInputDelay_ssest_Test_PPGamp{dayCounter} = minColumnIndex - 1;
+    bestModelOrder_ssest_Test_PPGamp{dayCounter} = RowIndices(minColumnIndex);
+end
 
 
 %% Create structs to store regularized models
 % Naming format: regBest_ssest_Test_[administration](lambdaIndex).[biomarker]
-
-regBest_ssest_Test_D1_1 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), 1, length(Lambda));
-regBest_ssest_Test_D1_2 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), 1, length(Lambda));
-regBest_ssest_Test_D2 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), 1, length(Lambda));
-regBest_ssest_Test_D3 = repmat(struct('HR',struct(idss),...
-    'PPGamp',struct(idss)), 1, length(Lambda));
+regBest_ssest_Test = {};
+for dayCounter = 1:4
+    regBest_ssest_Test{dayCounter} = repmat(struct('HR',struct(idss),...
+        'PPGamp',struct(idss)), 1, length(Lambda));
+end
 
 
 %% Create new AICc vectors so I can later select the best lambda
 % We will store one AICc value per lambda
-regBest_AICc_ssest_Test_D1_1_HR = zeros(1, length(Lambda));
-regBest_AICc_ssest_Test_D1_1_PPGamp = zeros(1, length(Lambda));
-
-regBest_AICc_ssest_Test_D1_2_HR = zeros(1, length(Lambda));
-regBest_AICc_ssest_Test_D1_2_PPGamp = zeros(1, length(Lambda));
-
-regBest_AICc_ssest_Test_D2_HR = zeros(1, length(Lambda));
-regBest_AICc_ssest_Test_D2_PPGamp = zeros(1, length(Lambda));
-
-regBest_AICc_ssest_Test_D3_HR = zeros(1, length(Lambda));
-regBest_AICc_ssest_Test_D3_PPGamp = zeros(1, length(Lambda));
-
+regBest_AICc_ssest_Test_HR = {};
+regBest_AICc_ssest_Test_PPGamp = {};
+for dayCounter = 1:4
+    regBest_AICc_ssest_Test_HR{dayCounter} = zeros(1, length(Lambda));
+    regBest_AICc_ssest_Test_PPGamp{dayCounter} = zeros(1, length(Lambda));
+end
 
 %% Estimate all regularized models for the best model order and input delay combo
 % For loop to iterate over lambda
@@ -199,62 +133,25 @@ for i = 1:length(Lambda)
     stateSpaceOptions.Regularization.Lambda = Lambda(i);
     
     % Estimate models
-    regBest_ssest_Test_D1_1(i).HR = ssest(Test_D1_1_HR, ...
-        bestModelOrder_ssest_Test_D1_1_HR, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D1_1_HR, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    regBest_ssest_Test_D1_1(i).PPGamp = ssest(Test_D1_1_PPGamp, ...
-        bestModelOrder_ssest_Test_D1_1_PPGamp, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D1_1_PPGamp, 'Form', 'modal', ...
-        'Ts', sampleTime);
     
-    regBest_ssest_Test_D1_2(i).HR = ssest(Test_D1_2_HR, ...
-        bestModelOrder_ssest_Test_D1_2_HR, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D1_2_HR, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    regBest_ssest_Test_D1_2(i).PPGamp = ssest(Test_D1_2_PPGamp, ...
-        bestModelOrder_ssest_Test_D1_2_PPGamp, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D1_2_PPGamp, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    
-    regBest_ssest_Test_D2(i).HR = ssest(Test_D2_HR, ...
-        bestModelOrder_ssest_Test_D2_HR, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D2_HR, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    regBest_ssest_Test_D2(i).PPGamp = ssest(Test_D2_PPGamp, ...
-        bestModelOrder_ssest_Test_D2_PPGamp, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D2_PPGamp, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    
-    regBest_ssest_Test_D3(i).HR = ssest(Test_D3_HR, ...
-        bestModelOrder_ssest_Test_D3_HR, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D3_HR, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    regBest_ssest_Test_D3(i).PPGamp = ssest(Test_D3_PPGamp, ...
-        bestModelOrder_ssest_Test_D3_PPGamp, stateSpaceOptions, ...
-        'InputDelay', bestInputDelay_ssest_Test_D3_PPGamp, 'Form', 'modal', ...
-        'Ts', sampleTime);
-    
-    % Store AICc values
-    regBest_AICc_ssest_Test_D1_1_HR(i) =  ...
-        regBest_ssest_Test_D1_1(i).HR.Report.Fit.AICc;
-    regBest_AICc_ssest_Test_D1_1_PPGamp(i) =  ...
-        regBest_ssest_Test_D1_1(i).PPGamp.Report.Fit.AICc;
-    
-    regBest_AICc_ssest_Test_D1_2_HR(i) =  ...
-        regBest_ssest_Test_D1_2(i).HR.Report.Fit.AICc;
-    regBest_AICc_ssest_Test_D1_2_PPGamp(i) =  ...
-        regBest_ssest_Test_D1_2(i).PPGamp.Report.Fit.AICc;
-    
-    regBest_AICc_ssest_Test_D2_HR(i) =  ...
-        regBest_ssest_Test_D2(i).HR.Report.Fit.AICc;
-    regBest_AICc_ssest_Test_D2_PPGamp(i) =  ...
-        regBest_ssest_Test_D2(i).PPGamp.Report.Fit.AICc;
-    
-    regBest_AICc_ssest_Test_D3_HR(i) =  ...
-        regBest_ssest_Test_D3(i).HR.Report.Fit.AICc;
-    regBest_AICc_ssest_Test_D3_PPGamp(i) =  ...
-        regBest_ssest_Test_D3(i).PPGamp.Report.Fit.AICc;
+    for dayCounter = 1:4
+        % Estimate models
+        regBest_ssest_Test{dayCounter}(i).HR = ssest(test_HR{dayCounter}, ...
+            bestModelOrder_ssest_Test_HR{dayCounter}, stateSpaceOptions, ...
+            'InputDelay', bestInputDelay_ssest_Test_HR{dayCounter}, 'Form', 'modal', ...
+            'Ts', sampleTime);
+        regBest_ssest_Test{dayCounter}(i).PPGamp = ssest(test_PPGamp{dayCounter}, ...
+            bestModelOrder_ssest_Test_PPGamp{dayCounter}, stateSpaceOptions, ...
+            'InputDelay', bestInputDelay_ssest_Test_PPGamp{dayCounter}, 'Form', 'modal', ...
+            'Ts', sampleTime);
+        
+        % Store AICc values
+        regBest_AICc_ssest_Test_HR{dayCounter}(i) =  ...
+            regBest_ssest_Test{dayCounter}(i).HR.Report.Fit.AICc;
+        regBest_AICc_ssest_Test_PPGamp{dayCounter}(i) =  ...
+            regBest_ssest_Test{dayCounter}(i).PPGamp.Report.Fit.AICc;
+        
+    end
     
     % Display model estimation status for user
     timeNow = datetime('now','TimeZone','local','Format','d-MMM-y HH:mm:ss Z');
@@ -262,109 +159,67 @@ for i = 1:length(Lambda)
 end
 
 %% Determine best lambda for each biomarker for each VNS administration
-[regBest_bestAICc_ssest_Test_D1_1_HR, bestLambdaIndex_ssest_Test_D1_1_HR] = ...
-    min(regBest_AICc_ssest_Test_D1_1_HR);
-[regBest_bestAICc_ssest_Test_D1_1_PPGamp, bestLambdaIndex_ssest_Test_D1_1_PPGamp] = ...
-    min(regBest_AICc_ssest_Test_D1_1_PPGamp);
+regBest_bestAICc_ssest_Test_HR = {};
+regBest_bestAICc_ssest_Test_PPGamp = {};
+bestLambdaIndex_ssest_Test_HR = {};
+bestLambdaIndex_ssest_Test_PPGamp = {};
 
-[regBest_bestAICc_ssest_Test_D1_2_HR, bestLambdaIndex_ssest_Test_D1_2_HR] = ...
-    min(regBest_AICc_ssest_Test_D1_2_HR);
-[regBest_bestAICc_ssest_Test_D1_2_PPGamp, bestLambdaIndex_ssest_Test_D1_2_PPGamp] = ...
-    min(regBest_AICc_ssest_Test_D1_2_PPGamp);
+for dayCounter = 1:4
+    [regBest_bestAICc_ssest_Test_HR{dayCounter}, bestLambdaIndex_ssest_Test_HR{dayCounter}] = ...
+        min(regBest_AICc_ssest_Test_HR{dayCounter});
+    [regBest_bestAICc_ssest_Test_PPGamp{dayCounter}, bestLambdaIndex_ssest_Test_PPGamp{dayCounter}] = ...
+        min(regBest_AICc_ssest_Test_PPGamp{dayCounter});
+end
 
-[regBest_bestAICc_ssest_Test_D2_HR, bestLambdaIndex_ssest_Test_D2_HR] = ...
-    min(regBest_AICc_ssest_Test_D2_HR);
-[regBest_bestAICc_ssest_Test_D2_PPGamp, bestLambdaIndex_ssest_Test_D2_PPGamp] = ...
-    min(regBest_AICc_ssest_Test_D2_PPGamp);
-
-[regBest_bestAICc_ssest_Test_D3_HR, bestLambdaIndex_ssest_Test_D3_HR] = ...
-    min(regBest_AICc_ssest_Test_D3_HR);
-[regBest_bestAICc_ssest_Test_D3_PPGamp, bestLambdaIndex_ssest_Test_D3_PPGamp] = ...
-    min(regBest_AICc_ssest_Test_D3_PPGamp);
 
 
 %% Store lambda value for the best regularized models
 % Access the lambda vector element of the best lambda index
-bestLambda_ssest_Test_D1_1_HR = Lambda(bestLambdaIndex_ssest_Test_D1_1_HR);
-bestLambda_ssest_Test_D1_1_PPGamp = Lambda(bestLambdaIndex_ssest_Test_D1_1_PPGamp);
-
-bestLambda_ssest_Test_D1_2_HR = Lambda(bestLambdaIndex_ssest_Test_D1_2_HR);
-bestLambda_ssest_Test_D1_2_PPGamp = Lambda(bestLambdaIndex_ssest_Test_D1_2_PPGamp);
-
-bestLambda_ssest_Test_D2_HR = Lambda(bestLambdaIndex_ssest_Test_D2_HR);
-bestLambda_ssest_Test_D2_PPGamp = Lambda(bestLambdaIndex_ssest_Test_D2_PPGamp);
-
-bestLambda_ssest_Test_D3_HR = Lambda(bestLambdaIndex_ssest_Test_D3_HR);
-bestLambda_ssest_Test_D3_PPGamp = Lambda(bestLambdaIndex_ssest_Test_D3_PPGamp);
+bestLambda_ssest_Test_HR = {};
+bestLambda_ssest_Test_PPGamp = {};
+for dayCounter = 1:4
+    bestLambda_ssest_Test_HR{dayCounter} = Lambda(bestLambdaIndex_ssest_Test_HR{dayCounter});
+    bestLambda_ssest_Test_PPGamp{dayCounter} = Lambda(bestLambdaIndex_ssest_Test_PPGamp{dayCounter});
+end
 
 
 %% For future use, store separately the optimum models
 % Access the model stored in the regularized structs associated with the
 % best lambda index
+bestModel_Test_HR = {};
+bestModel_Test_PPGamp = {};
 
-bestModel_Test_D1_1_HR = regBest_ssest_Test_D1_1(...
-    bestLambdaIndex_ssest_Test_D1_1_HR).HR;
-bestModel_Test_D1_1_PPGamp = regBest_ssest_Test_D1_1(...
-    bestLambdaIndex_ssest_Test_D1_1_PPGamp).PPGamp;
-
-bestModel_Test_D1_2_HR = regBest_ssest_Test_D1_2(...
-    bestLambdaIndex_ssest_Test_D1_2_HR).HR;
-bestModel_Test_D1_2_PPGamp = regBest_ssest_Test_D1_2(...
-    bestLambdaIndex_ssest_Test_D1_2_PPGamp).PPGamp;
-
-bestModel_Test_D2_HR = regBest_ssest_Test_D2(...
-    bestLambdaIndex_ssest_Test_D2_HR).HR;
-bestModel_Test_D2_PPGamp = regBest_ssest_Test_D2(...
-    bestLambdaIndex_ssest_Test_D2_PPGamp).PPGamp;
-
-bestModel_Test_D3_HR = regBest_ssest_Test_D3(...
-    bestLambdaIndex_ssest_Test_D3_HR).HR;
-bestModel_Test_D3_PPGamp = regBest_ssest_Test_D3(...
-    bestLambdaIndex_ssest_Test_D3_PPGamp).PPGamp;
+for dayCounter = 1:4
+    bestModel_Test_HR{dayCounter} = regBest_ssest_Test{dayCounter}(...
+        bestLambdaIndex_ssest_Test_HR{dayCounter}).HR;
+    bestModel_Test_PPGamp{dayCounter} = regBest_ssest_Test{dayCounter}(...
+        bestLambdaIndex_ssest_Test_PPGamp{dayCounter}).PPGamp;
+end
 
 
 %% Using the compare command, store 1-step ahead fit percentages
 % Syntax: [~, fit %, ~] = compare(test data, model, steps);
-[~, fit_1step_ssest_Test_D1_1_HR, ~] = compare(D1_1_HR, ...
-    bestModel_Test_D1_1_HR, 1);
-[~, fit_1step_ssest_Test_D1_1_PPGamp, ~] = compare(D1_1_PPGamp, ...
-    bestModel_Test_D1_1_PPGamp, 1);
+fit_1step_ssest_Test_HR = {};
+fit_1step_ssest_Test_PPGamp = {};
 
-[~, fit_1step_ssest_Test_D1_2_HR, ~] = compare(D1_2_HR, ...
-    bestModel_Test_D1_2_HR, 1);
-[~, fit_1step_ssest_Test_D1_2_PPGamp, ~] = compare(D1_2_PPGamp, ...
-    bestModel_Test_D1_2_PPGamp, 1);
+for dayCounter = 1:4
+    [~, fit_1step_ssest_Test_HR{dayCounter}, ~] = compare(HR_iddatas{dayCounter}, ...
+        bestModel_Test_HR{dayCounter}, 1);
+    [~, fit_1step_ssest_Test_PPGamp{dayCounter}, ~] = compare(PPGamp_iddatas{dayCounter}, ...
+        bestModel_Test_PPGamp{dayCounter}, 1);
+end
 
-[~, fit_1step_ssest_Test_D2_HR, ~] = compare(D2_HR, ...
-    bestModel_Test_D2_HR, 1);
-[~, fit_1step_ssest_Test_D2_PPGamp, ~] = compare(D2_PPGamp, ...
-    bestModel_Test_D2_PPGamp, 1);
-
-[~, fit_1step_ssest_Test_D3_HR, ~] = compare(D3_HR, ...
-    bestModel_Test_D3_HR, 1);
-[~, fit_1step_ssest_Test_D3_PPGamp, ~] = compare(D3_PPGamp, ...
-    bestModel_Test_D3_PPGamp, 1);
 
 
 %% Store all desired values in a table and export to excel doc
 % Create table with all desired values
 excelResults = table(...
-    bestModelOrder_ssest_Test_D1_1_HR, ...
-    bestInputDelay_ssest_Test_D1_1_HR, fit_1step_ssest_Test_D1_1_HR, ...
-    bestModelOrder_ssest_Test_D1_1_PPGamp, ...
-    bestInputDelay_ssest_Test_D1_1_PPGamp, fit_1step_ssest_Test_D1_1_PPGamp, ...
-    bestModelOrder_ssest_Test_D1_2_HR, ...
-    bestInputDelay_ssest_Test_D1_2_HR, fit_1step_ssest_Test_D1_2_HR, ...
-    bestModelOrder_ssest_Test_D1_2_PPGamp, ...
-    bestInputDelay_ssest_Test_D1_2_PPGamp, fit_1step_ssest_Test_D1_2_PPGamp, ...
-    bestModelOrder_ssest_Test_D2_HR, ...
-    bestInputDelay_ssest_Test_D2_HR, fit_1step_ssest_Test_D2_HR, ...
-    bestModelOrder_ssest_Test_D2_PPGamp, ...
-    bestInputDelay_ssest_Test_D2_PPGamp, fit_1step_ssest_Test_D2_PPGamp, ...
-    bestModelOrder_ssest_Test_D3_HR, ...
-    bestInputDelay_ssest_Test_D3_HR, fit_1step_ssest_Test_D3_HR, ...
-    bestModelOrder_ssest_Test_D3_PPGamp, ...
-    bestInputDelay_ssest_Test_D3_PPGamp, fit_1step_ssest_Test_D3_PPGamp);
+    bestModelOrder_ssest_Test_HR, ...
+    bestInputDelay_ssest_Test_HR, ...
+    fit_1step_ssest_Test_HR, ...
+    bestModelOrder_ssest_Test_PPGamp, ...
+    bestInputDelay_ssest_Test_PPGamp, ...
+    fit_1step_ssest_Test_PPGamp);
 
 % Write the results to the specified file
 filename = 'Results\ModelingOutput.csv';

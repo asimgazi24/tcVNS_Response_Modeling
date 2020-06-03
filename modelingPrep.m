@@ -4,15 +4,30 @@
 % This script prepares the example biomarker time series data for 
 % subsequent state-space modeling
 
-
 % Load example dataset
 load('Example_Day1_Day2_Day3_combined.mat')
+% Convert to matrices and cell arrays
+% Day 1 is represented twice for easier loop control with day 1 being separated into two parts
+raw_HR = {HR_day1, HR_day1, HR_day2, HR_day3};
+raw_tHR = {tHR_day1, tHR_day1, tHR_day2, tHR_day3};
+HR_rests = [HR_rest_D1, HR_rest_D1, HR_rest_D2, HR_rest_D3];
+HR_iddatas = {};
 
+raw_PPGamp = {PPGamp_day1, PPGamp_day1, PPGamp_day2, PPGamp_day3};
+raw_tPPGamp = {tPPGamp_day1, tPPGamp_day1, tPPGamp_day2, tPPGamp_day3};
+PPGamp_rests = [PPGamp_rest_D1, PPGamp_rest_D1, PPGamp_rest_D2, PPGamp_rest_D3];
+PPGamp_iddatas = {};
 
-%% Parse unfiltered data (in case unfiltered output is desired)
-% This will also take care of a few later steps for us, such as finding the
-% missing amounts of data before/after, as well as extracting a new time
-% vector
+VNS_starts = [VNSstart_D1_1, VNSstart_D1_2, VNSstart_D2, VNSstart_D3];
+VNS_stops = [VNSstop_D1_1, VNSstop_D1_2, VNSstop_D2, VNSstop_D3];
+
+% This is what we use during the actual operations. More or less signals can be added
+% by changing these values and then updating the signalCounter
+raw_SIGNAL = {raw_HR, raw_PPGamp};
+raw_tSIGNAL = {raw_tHR, raw_tPPGamp};
+SIGNAL_rests = {HR_rests, PPGamp_rests};
+SIGNAL_iddatas = {HR_iddatas, PPGamp_iddatas};
+
 
 % Based on our dataset, we kept 60 s prior to stimulation and 120 s after
 % stimulation for modeling
@@ -20,404 +35,133 @@ preVNSBuffer = 60;
 postVNSBuffer = 120;
 VNSlength = 120;
 
-% Using the parseVector function, we parse the data into specific
-% administrations, while tracking the missing intial and end datapoints
-% using a recursive function approach (we need to store these variables in
-% case we need to alter the pulse input accordingly)
-% HR
-% Day 1
-[tHR_D1_1, HR_D1_1, missingInitial_HR_D1_1, missingEnd_HR_D1_1] = ...
-    parseVector(tHR_day1, HR_day1, VNSstart_D1_1, preVNSBuffer, ...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-[tHR_D1_2, HR_D1_2, missingInitial_HR_D1_2, missingEnd_HR_D1_2] = ...
-    parseVector(tHR_day1, HR_day1, VNSstart_D1_2, preVNSBuffer, ...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 2
-[tHR_D2, HR_D2, missingInitial_HR_D2, missingEnd_HR_D2] = ...
-    parseVector(tHR_day2, HR_day2, VNSstart_D2, preVNSBuffer, ...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 3
-[tHR_D3, HR_D3, missingInitial_HR_D3, missingEnd_HR_D3] = ...
-    parseVector(tHR_day3, HR_day3, VNSstart_D3, preVNSBuffer, ...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
+% First signalCounter iteration is for HR and second is for PPGamp
+for signalCounter = 1:2
+    for dayCounter = 1:4
 
-% PPG amplitude
-% Day 1
-[tPPGamp_D1_1, PPGamp_D1_1, missingInitial_PPGamp_D1_1, missingEnd_PPGamp_D1_1] = ...
-    parseVector(tPPGamp_day1, PPGamp_day1, VNSstart_D1_1, preVNSBuffer,...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-[tPPGamp_D1_2, PPGamp_D1_2, missingInitial_PPGamp_D1_2, missingEnd_PPGamp_D1_2] = ...
-    parseVector(tPPGamp_day1, PPGamp_day1, VNSstart_D1_2, preVNSBuffer,...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 2
-[tPPGamp_D2, PPGamp_D2, missingInitial_PPGamp_D2, missingEnd_PPGamp_D2] = ...
-    parseVector(tPPGamp_day2, PPGamp_day2, VNSstart_D2, preVNSBuffer,...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 3
-[tPPGamp_D3, PPGamp_D3, missingInitial_PPGamp_D3, missingEnd_PPGamp_D3] = ...
-    parseVector(tPPGamp_day3, PPGamp_day3, VNSstart_D3, preVNSBuffer,...
-    VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
+        % Using the parseVector function, we parse the data into specific
+        % administrations, while tracking the missing intial and end datapoints
+        % using a recursive function approach (we need to store these variables in
+        % case we need to alter the pulse input accordingly)
 
+        [tSIGNAL_DayN, SIGNAL_DayN, missingInitial_SIGNAL_DayN, missingEnd_SIGNAL_DayN] = ...
+            parseVector(raw_tSIGNAL{signalCounter}{dayCounter}, raw_SIGNAL{signalCounter}{dayCounter}, VNS_starts(dayCounter), preVNSBuffer, ...
+            VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);  
+        
+        %% Shift time vectors to start at t = 0 s
+        % This can be done by just left shifting by the first time point stored in
+        % each vector
+        tSIGNAL_DayN_shifted = tSIGNAL_DayN - tSIGNAL_DayN(1);
 
-%% Shift time vectors to start at t = 0 s
-% This can be done by just left shifting by the first time point stored in
-% each vector
+        %% Filter biomarker time series
+        % Create simple boxcar moving average filter 
+        windowSize = 5;          % data available at a rate of approx. 1/s
+        b = (1/windowSize)*ones(1,windowSize);
+        a = 1;
 
-% HR
-% Day 1
-tHR_D1_1_shifted = tHR_D1_1 - tHR_D1_1(1);
-tHR_D1_2_shifted = tHR_D1_2 - tHR_D1_2(1);
-% Day 2
-tHR_D2_shifted = tHR_D2 - tHR_D2(1);
-% Day 3
-tHR_D3_shifted = tHR_D3 - tHR_D3(1);
+        % Use built-in filter function
+        SIGNAL_DayN_raw_filtered = filter(b, a, raw_SIGNAL{signalCounter}{dayCounter});
 
-% PPG Amplitude
-% Day 1
-tPPGamp_D1_1_shifted = tPPGamp_D1_1 - tPPGamp_D1_1(1);
-tPPGamp_D1_2_shifted = tPPGamp_D1_2 - tPPGamp_D1_2(1);
-% Day 2
-tPPGamp_D2_shifted = tPPGamp_D2 - tPPGamp_D2(1);
-% Day 3
-tPPGamp_D3_shifted = tPPGamp_D3 - tPPGamp_D3(1);
+        %% Parse filtered data
+        % Recall that we already stored much of the other output information
+        % needed. So the only thing we really need from this is to extract the
+        % filtered data
+        [~, SIGNAL_DayN_filtered, ~, ~] = parseVector(raw_tSIGNAL{signalCounter}{dayCounter}, SIGNAL_DayN_raw_filtered, ...
+        VNS_starts(dayCounter), preVNSBuffer, VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
 
-%%
-% Now, we deal with filtering before continuing with rest of prep.
+        %% Resample data to desired sampling rate
+        % Sample time and frequency
+        dt = 1;
+        fs = 1/dt;
 
-%% Filter biomarker time series
-% Create simple boxcar moving average filter 
-windowSize = 5;          % data available at a rate of approx. 1/s
-b = (1/windowSize)*ones(1,windowSize);
-a = 1;
+        % Resample using built-in function
+        % From the documentation, resample assumes the endpoints are 0
+        % This is clearly an incorrect assumption. Thus, to correct this,
+        % we follow the 'Removing Endpoint Effects' section in the documentation:
+        % https://www.mathworks.com/help/signal/examples/resampling-nonuniformly-sampled-signals.html
 
-% Use built-in filter function
-% HR
-% Day 1
-HR_day1_filtered = filter(b, a, HR_day1);
-% Day 2
-HR_day2_filtered = filter(b, a, HR_day2);
-% Day 3
-HR_day3_filtered = filter(b, a, HR_day3);
+        % Unfiltered
+        [SIGNAL_DayN_resampled, tSIGNAL_DayN_resampled] = clean_resample(SIGNAL_DayN, tSIGNAL_DayN_shifted, fs, 'spline');
+        % Filtered
+        [SIGNAL_DayN_filtered_resampled, tSIGNAL_DayN_filtered_resampled] = clean_resample(SIGNAL_DayN_filtered, tSIGNAL_DayN_shifted, fs, 'spline');
+        % Make sure vectors are of appropriate length
+        % If not, use interp1 to force it to be so
+        % Store available times
+        availableTime_SIGNAL_DayN = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
+            (missingEnd_SIGNAL_DayN + missingInitial_SIGNAL_DayN);
 
-% PPGamp
-% Day 1
-PPGamp_day1_filtered = filter(b, a, PPGamp_day1);
-% Day 2
-PPGamp_day2_filtered = filter(b, a, PPGamp_day2);
-% Day 3
-PPGamp_day3_filtered = filter(b, a, PPGamp_day3);
+        % Create appropriate sampling time vectors
+        sampleTime_SIGNAL_DayN = dt:dt:availableTime_SIGNAL_DayN;
+
+        % Check before doing this extra operation
+        % With this interpolation to a specified sampleTime vector, we're
+        % guaranteeing that the vector will be of appropriate length
+
+        % Notice that if the unfiltered version was resampled in an undesirable way,
+        % the filtered version will be equivalently resampled
+        if length(SIGNAL_DayN_resampled) ~= availableTime_SIGNAL_DayN
+            SIGNAL_DayN_resampled = interp1(tSIGNAL_DayN_resampled, SIGNAL_DayN_resampled, ...
+                sampleTime_SIGNAL_DayN, 'spline');
+            SIGNAL_DayN_filtered_resampled = interp1(tSIGNAL_DayN_filtered_resampled, ...
+                SIGNAL_DayN_filtered_resampled, sampleTime_SIGNAL_DayN, 'spline');
+        end
+
+        %% Normalize output vectors by appropriate resting values
+        % Normalize by subtracting by and dividing by rest
+        % Unfiltered
+        SIGNAL_DayN_resampled_normal = (1/SIGNAL_rests{signalCounter}(dayCounter))*(SIGNAL_DayN_resampled - SIGNAL_rests{signalCounter}(dayCounter));
+        % Filtered
+        SIGNAL_DayN_filtered_resampled_normal = (1/SIGNAL_rests{signalCounter}(dayCounter))*(SIGNAL_DayN_filtered_resampled - SIGNAL_rests{signalCounter}(dayCounter));
 
 
+        %% Create gammaCore-replicating tcVNS Input Pulses
+        % Because each biomarker-administration dataset could potentially have
+        % different missing dataset, each of these pulses are constructed
+        % (potentially) differently
+        pulse_SIGNAL_DayN = [zeros(1, round((preVNSBuffer - missingEnd_SIGNAL_DayN)/dt))...
+            ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_SIGNAL_DayN)/dt))];
 
-%% Parse filtered data
-% Recall that we already stored much of the other output information
-% needed. So the only thing we really need from this is to extract the
-% filtered data
+        % Pass through boxcar filter to achieve ramp up and down effect
+        pulse_SIGNAL_DayN = filter(b, a, pulse_SIGNAL_DayN);
 
-% HR
-% Day 1
-[~, HR_D1_1_filtered, ~, ~] = parseVector(tHR_day1, HR_day1_filtered, ...
-    VNSstart_D1_1, preVNSBuffer, VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-[~, HR_D1_2_filtered, ~, ~] = parseVector(tHR_day1, HR_day1_filtered, ...
-    VNSstart_D1_2, preVNSBuffer, VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 2
-[~, HR_D2_filtered, ~, ~] = parseVector(tHR_day2, HR_day2_filtered, ...
-    VNSstart_D2, preVNSBuffer, 120 + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 3
-[~, HR_D3_filtered, ~, ~] = parseVector(tHR_day3, HR_day3_filtered, ...
-    VNSstart_D3, preVNSBuffer, 120 + preVNSBuffer + postVNSBuffer, 0, 0);
+        %% Transpose all row vectors for possible use into column vectors
+        % Built-in model identification functions expect column vectors for data
+        % So, just transpose
 
-% PPGamp
-% Day 1
-[~, PPGamp_D1_1_filtered, ~, ~] = parseVector(tPPGamp_day1, PPGamp_day1_filtered, ...
-    VNSstart_D1_1, preVNSBuffer, VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-[~, PPGamp_D1_2_filtered, ~, ~] = parseVector(tPPGamp_day1, PPGamp_day1_filtered, ...
-    VNSstart_D1_2, preVNSBuffer, VNSlength + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 2
-[~, PPGamp_D2_filtered, ~, ~] = parseVector(tPPGamp_day2, PPGamp_day2_filtered, ...
-    VNSstart_D2, preVNSBuffer, 120 + preVNSBuffer + postVNSBuffer, 0, 0);
-% Day 3
-[~, PPGamp_D3_filtered, ~, ~] = parseVector(tPPGamp_day3, PPGamp_day3_filtered, ...
-    VNSstart_D3, preVNSBuffer, 120 + preVNSBuffer + postVNSBuffer, 0, 0);
+        % Pulse inputs
+        pulse_SIGNAL_DayN = pulse_SIGNAL_DayN';
 
+        % Unfiltered Output
+        SIGNAL_DayN_resampled_normal = SIGNAL_DayN_resampled_normal';
 
-%% Resample data to desired sampling rate
-% Sample time and frequency
-dt = 1;
-fs = 1/dt;
+        % Filtered Output
+        SIGNAL_DayN_filtered_resampled_normal = SIGNAL_DayN_filtered_resampled_normal';
 
-% Resample using built-in function
-% From the documentation, resample assumes the endpoints are 0
-% This is clearly an incorrect assumption. Thus, to correct this,
-% we follow the 'Removing Endpoint Effects' section in the documentation:
-% https://www.mathworks.com/help/signal/examples/resampling-nonuniformly-sampled-signals.html
-% HR
-% Day 1
-% Unfiltered
-[HR_D1_1_resampled, tHR_D1_1_resampled] = clean_resample(HR_D1_1, tHR_D1_1_shifted, fs, 'spline');
-[HR_D1_2_resampled, tHR_D1_2_resampled] = clean_resample(HR_D1_2, tHR_D1_2_shifted, fs, 'spline');
-% Filtered
-[HR_D1_1_filtered_resampled, tHR_D1_1_filtered_resampled] = clean_resample(HR_D1_1_filtered, tHR_D1_1_shifted, fs, 'spline');
-[HR_D1_2_filtered_resampled, tHR_D1_2_filtered_resampled] = clean_resample(HR_D1_2_filtered, tHR_D1_2_shifted, fs, 'spline');
-% Day 2
-% Unfiltered
-[HR_D2_resampled, tHR_D2_resampled] = clean_resample(HR_D2, tHR_D2_shifted, fs, 'spline');
-% Filtered
-[HR_D2_filtered_resampled, tHR_D2_filtered_resampled] = clean_resample(HR_D2_filtered, tHR_D2_shifted, fs, 'spline');
-% Day 3
-% Unfiltered
-[HR_D3_resampled, tHR_D3_resampled] = clean_resample(HR_D3, tHR_D3_shifted, fs, 'spline');
-% Filtered
-[HR_D3_filtered_resampled, tHR_D3_filtered_resampled] = clean_resample(HR_D3_filtered, tHR_D3_shifted, fs, 'spline');
+        %%
+        % Now, we need to use the desired data to create iddata objects for model
+        % identification
+        %% Create single experiment iddata objects
+        % Syntax: % data = iddata(y, u, Ts), where y is the output, u is the input,
+        % and Ts is the sample time
 
-% PPGamp
-% Day 1
-% Unfiltered
-[PPGamp_D1_1_resampled, tPPGamp_D1_1_resampled] = clean_resample(PPGamp_D1_1, tPPGamp_D1_1_shifted, fs, 'spline');
-[PPGamp_D1_2_resampled, tPPGamp_D1_2_resampled] = clean_resample(PPGamp_D1_2, tPPGamp_D1_2_shifted, fs, 'spline');
-% Filtered
-[PPGamp_D1_1_filtered_resampled, tPPGamp_D1_1_filtered_resampled] = clean_resample(PPGamp_D1_1_filtered, tPPGamp_D1_1_shifted, fs, 'spline');
-[PPGamp_D1_2_filtered_resampled, tPPGamp_D1_2_filtered_resampled] = clean_resample(PPGamp_D1_2_filtered, tPPGamp_D1_2_shifted, fs, 'spline');
-% Day 2
-% Unfiltered
-[PPGamp_D2_resampled, tPPGamp_D2_resampled] = clean_resample(PPGamp_D2, tPPGamp_D2_shifted, fs, 'spline');
-% Filtered
-[PPGamp_D2_filtered_resampled, tPPGamp_D2_filtered_resampled] = clean_resample(PPGamp_D2_filtered, tPPGamp_D2_shifted, fs, 'spline');
-% Day 3
-% Unfiltered
-[PPGamp_D3_resampled, tPPGamp_D3_resampled] = clean_resample(PPGamp_D3, tPPGamp_D3_shifted, fs, 'spline');
-% Filtered
-[PPGamp_D3_filtered_resampled, tPPGamp_D3_filtered_resampled] = clean_resample(PPGamp_D3_filtered, tPPGamp_D3_shifted, fs, 'spline');
-
-% Make sure all vectors are of appropriate length
-% If not, use interp1 to force it to be so
-
-% Store available times
-availableTime_HR_D1_1 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_HR_D1_1 + missingInitial_HR_D1_1);
-availableTime_HR_D1_2 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_HR_D1_2 + missingInitial_HR_D1_2);
-availableTime_HR_D2 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_HR_D2 + missingInitial_HR_D2);
-availableTime_HR_D3 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_HR_D3 + missingInitial_HR_D3);
-
-availableTime_PPGamp_D1_1 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_PPGamp_D1_1 + missingInitial_PPGamp_D1_1);
-availableTime_PPGamp_D1_2 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_PPGamp_D1_2 + missingInitial_PPGamp_D1_2);
-availableTime_PPGamp_D2 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_PPGamp_D2 + missingInitial_PPGamp_D2);
-availableTime_PPGamp_D3 = (VNSlength + preVNSBuffer + postVNSBuffer) - ...
-    (missingEnd_PPGamp_D3 + missingInitial_PPGamp_D3);
-
-% Create appropriate sampling time vectors
-% Create appropriate sampling time vectors
-sampleTime_HR_D1_1 = dt:dt:availableTime_HR_D1_1;
-sampleTime_HR_D1_2 = dt:dt:availableTime_HR_D1_2;
-sampleTime_HR_D2 = dt:dt:availableTime_HR_D2;
-sampleTime_HR_D3 = dt:dt:availableTime_HR_D3;
-
-sampleTime_PPGamp_D1_1 = dt:dt:availableTime_PPGamp_D1_1;
-sampleTime_PPGamp_D1_2 = dt:dt:availableTime_PPGamp_D1_2;
-sampleTime_PPGamp_D2 = dt:dt:availableTime_PPGamp_D2;
-sampleTime_PPGamp_D3 = dt:dt:availableTime_PPGamp_D3;
-
-% Check before doing this extra operation
-% With this interpolation to a specified sampleTime vector, we're
-% guaranteeing that the vector will be of appropriate length
-
-% Notice that if the unfiltered version was resampled in an undesirable way,
-% the filtered version will be equivalently resampled
-% HR
-if length(HR_D1_1_resampled) ~= availableTime_HR_D1_1
-    HR_D1_1_resampled = interp1(tHR_D1_1_resampled, HR_D1_1_resampled, ...
-        sampleTime_HR_D1_1, 'spline');
-    HR_D1_1_filtered_resampled = interp1(tHR_D1_1_filtered_resampled, ...
-        HR_D1_1_filtered_resampled, sampleTime_HR_D1_1, 'spline');
-end
-if length(HR_D1_2_resampled) ~= availableTime_HR_D1_2
-    HR_D1_2_resampled = interp1(tHR_D1_2_resampled, HR_D1_2_resampled, ...
-        sampleTime_HR_D1_2, 'spline');
-    HR_D1_2_filtered_resampled = interp1(tHR_D1_2_filtered_resampled, ...
-        HR_D1_2_filtered_resampled, sampleTime_HR_D1_2, 'spline');
-end
-if length(HR_D2_resampled) ~= availableTime_HR_D2
-    HR_D2_resampled = interp1(tHR_D2_resampled, HR_D2_resampled, ...
-        sampleTime_HR_D2, 'spline');
-    HR_D2_filtered_resampled = interp1(tHR_D2_filtered_resampled, ...
-        HR_D2_filtered_resampled, sampleTime_HR_D2, 'spline');
-end
-if length(HR_D3_resampled) ~= availableTime_HR_D3
-    HR_D3_resampled = interp1(tHR_D3_resampled, HR_D3_resampled, ...
-        sampleTime_HR_D3, 'spline');
-    HR_D3_filtered_resampled = interp1(tHR_D3_filtered_resampled, ...
-        HR_D3_filtered_resampled, sampleTime_HR_D3, 'spline');
+        % From here on out, we will replicate the paper's approach in using
+        % filtered biomarker data only
+        SIGNAL_iddatas{signalCounter}{dayCounter} = iddata(SIGNAL_DayN_filtered_resampled_normal, pulse_SIGNAL_DayN, dt);
+    end
 end
 
-% PPGamp
-if length(PPGamp_D1_1_resampled) ~= availableTime_PPGamp_D1_1
-    PPGamp_D1_1_resampled = interp1(tPPGamp_D1_1_resampled, PPGamp_D1_1_resampled, ...
-        sampleTime_PPGamp_D1_1, 'spline');
-    PPGamp_D1_1_filtered_resampled = interp1(tPPGamp_D1_1_filtered_resampled, ...
-        PPGamp_D1_1_filtered_resampled, sampleTime_PPGamp_D1_1, 'spline');
-end
-if length(PPGamp_D1_2_resampled) ~= availableTime_PPGamp_D1_2
-    PPGamp_D1_2_resampled = interp1(tPPGamp_D1_2_resampled, PPGamp_D1_2_resampled, ...
-        sampleTime_PPGamp_D1_2, 'spline');
-    PPGamp_D1_2_filtered_resampled = interp1(tPPGamp_D1_2_filtered_resampled, ...
-        PPGamp_D1_2_filtered_resampled, sampleTime_PPGamp_D1_2, 'spline');
-end
-if length(PPGamp_D2_resampled) ~= availableTime_PPGamp_D2
-    PPGamp_D2_resampled = interp1(tPPGamp_D2_resampled, PPGamp_D2_resampled, ...
-        sampleTime_PPGamp_D2, 'spline');
-    PPGamp_D2_filtered_resampled = interp1(tPPGamp_D2_filtered_resampled, ...
-        PPGamp_D2_filtered_resampled, sampleTime_PPGamp_D2, 'spline');
-end
-if length(PPGamp_D3_resampled) ~= availableTime_PPGamp_D3
-    PPGamp_D3_resampled = interp1(tPPGamp_D3_resampled, PPGamp_D3_resampled, ...
-        sampleTime_PPGamp_D3, 'spline');
-    PPGamp_D3_filtered_resampled = interp1(tPPGamp_D3_filtered_resampled, ...
-        PPGamp_D3_filtered_resampled, sampleTime_PPGamp_D3, 'spline');
-end
+% Separate out HR and PPGamp administrations for cross-validation purposes
+HR_iddatas = SIGNAL_iddatas{1};
+D1_1_HR = HR_iddatas{1};
+D1_2_HR = HR_iddatas{2};
+D2_HR = HR_iddatas{3};
+D3_HR = HR_iddatas{4};
 
-%% Normalize output vectors by appropriate resting values
-% Normalize by subtracting by and dividing by rest
-% HR
-% Day 1
-% Unfiltered
-HR_D1_1_resampled_normal = (1/HR_rest_D1)*(HR_D1_1_resampled - HR_rest_D1);
-HR_D1_2_resampled_normal = (1/HR_rest_D1)*(HR_D1_2_resampled - HR_rest_D1);
-% Filtered
-HR_D1_1_filtered_resampled_normal = (1/HR_rest_D1)*(HR_D1_1_filtered_resampled - HR_rest_D1);
-HR_D1_2_filtered_resampled_normal = (1/HR_rest_D1)*(HR_D1_2_filtered_resampled - HR_rest_D1);
-% Day 2
-% Unfiltered
-HR_D2_resampled_normal = (1/HR_rest_D2)*(HR_D2_resampled - HR_rest_D2);
-% Filtered
-HR_D2_filtered_resampled_normal = (1/HR_rest_D2)*(HR_D2_filtered_resampled - HR_rest_D2);
-% Day 3
-% Unfiltered
-HR_D3_resampled_normal = (1/HR_rest_D3)*(HR_D3_resampled - HR_rest_D3);
-% Filtered
-HR_D3_filtered_resampled_normal = (1/HR_rest_D3)*(HR_D3_filtered_resampled - HR_rest_D3);
-
-% PPGamp
-% Day 1
-% Unfiltered
-PPGamp_D1_1_resampled_normal = (1/PPGamp_rest_D1)*(PPGamp_D1_1_resampled - PPGamp_rest_D1);
-PPGamp_D1_2_resampled_normal = (1/PPGamp_rest_D1)*(PPGamp_D1_2_resampled - PPGamp_rest_D1);
-% Filtered
-PPGamp_D1_1_filtered_resampled_normal = (1/PPGamp_rest_D1)*(PPGamp_D1_1_filtered_resampled - PPGamp_rest_D1);
-PPGamp_D1_2_filtered_resampled_normal = (1/PPGamp_rest_D1)*(PPGamp_D1_2_filtered_resampled - PPGamp_rest_D1);
-% Day 2
-% Unfiltered
-PPGamp_D2_resampled_normal = (1/PPGamp_rest_D2)*(PPGamp_D2_resampled - PPGamp_rest_D2);
-% Filtered
-PPGamp_D2_filtered_resampled_normal = (1/PPGamp_rest_D2)*(PPGamp_D2_filtered_resampled - PPGamp_rest_D2);
-% Day 3
-% Unfiltered
-PPGamp_D3_resampled_normal = (1/PPGamp_rest_D3)*(PPGamp_D3_resampled - PPGamp_rest_D3);
-% Filtered
-PPGamp_D3_filtered_resampled_normal = (1/PPGamp_rest_D3)*(PPGamp_D3_filtered_resampled - PPGamp_rest_D3);
-
-
-%% Create gammaCore-replicating tcVNS Input Pulses
-% Because each biomarker-administration dataset could potentially have
-% different missing dataset, each of these pulses are constructed
-% (potentially) differently
-
-% HR
-% Day 1
-pulse_HR_D1_1 = [zeros(1, round((preVNSBuffer - missingInitial_HR_D1_1)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_HR_D1_1)/dt))];
-pulse_HR_D1_2 = [zeros(1, round((preVNSBuffer - missingInitial_HR_D1_2)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_HR_D1_2)/dt))];
-% Day 2
-pulse_HR_D2 = [zeros(1, round((preVNSBuffer - missingInitial_HR_D2)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_HR_D2)/dt))];
-% Day 3
-pulse_HR_D3 = [zeros(1, round((preVNSBuffer - missingInitial_HR_D3)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_HR_D3)/dt))];
-
-% PPGamp
-% Day 1
-pulse_PPGamp_D1_1 = [zeros(1, round((preVNSBuffer - missingInitial_PPGamp_D1_1)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_PPGamp_D1_1)/dt))];
-pulse_PPGamp_D1_2 = [zeros(1, round((preVNSBuffer - missingInitial_PPGamp_D1_2)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_PPGamp_D1_2)/dt))];
-% Day 2
-pulse_PPGamp_D2 = [zeros(1, round((preVNSBuffer - missingInitial_PPGamp_D2)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_PPGamp_D2)/dt))];
-% Day 3
-pulse_PPGamp_D3 = [zeros(1, round((preVNSBuffer - missingInitial_PPGamp_D3)/dt))...
-    ones(1, round(VNSlength/dt)) zeros(1, round((postVNSBuffer - missingEnd_PPGamp_D3)/dt))];
-
-% Pass through boxcar filter to achieve ramp up and down effect
-pulse_HR_D1_1 = filter(b, a, pulse_HR_D1_1);
-pulse_HR_D1_2 = filter(b, a, pulse_HR_D1_2);
-pulse_HR_D2 = filter(b, a, pulse_HR_D2);
-pulse_HR_D3 = filter(b, a, pulse_HR_D3);
-
-pulse_PPGamp_D1_1 = filter(b, a, pulse_PPGamp_D1_1);
-pulse_PPGamp_D1_2 = filter(b, a, pulse_PPGamp_D1_2);
-pulse_PPGamp_D2 = filter(b, a, pulse_PPGamp_D2);
-pulse_PPGamp_D3 = filter(b, a, pulse_PPGamp_D3);
-
-%% Transpose all row vectors for possible use into column vectors
-% Built-in model identification functions expect column vectors for data
-% So, just transpose
-
-% Pulse inputs
-pulse_HR_D1_1 = pulse_HR_D1_1';
-pulse_HR_D1_2 = pulse_HR_D1_2';
-pulse_HR_D2 = pulse_HR_D2';
-pulse_HR_D3 = pulse_HR_D3';
-pulse_PPGamp_D1_1 = pulse_PPGamp_D1_1';
-pulse_PPGamp_D1_2 = pulse_PPGamp_D1_2';
-pulse_PPGamp_D2 = pulse_PPGamp_D2';
-pulse_PPGamp_D3 = pulse_PPGamp_D3';
-
-% Unfiltered Output
-HR_D1_1_resampled_normal = HR_D1_1_resampled_normal';
-HR_D1_2_resampled_normal = HR_D1_2_resampled_normal';
-HR_D2_resampled_normal = HR_D2_resampled_normal';
-HR_D3_resampled_normal = HR_D3_resampled_normal';
-PPGamp_D1_1_resampled_normal = PPGamp_D1_1_resampled_normal';
-PPGamp_D1_2_resampled_normal = PPGamp_D1_2_resampled_normal';
-PPGamp_D2_resampled_normal = PPGamp_D2_resampled_normal';
-PPGamp_D3_resampled_normal = PPGamp_D3_resampled_normal';
-
-% Filtered Output
-HR_D1_1_filtered_resampled_normal = HR_D1_1_filtered_resampled_normal';
-HR_D1_2_filtered_resampled_normal = HR_D1_2_filtered_resampled_normal';
-HR_D2_filtered_resampled_normal = HR_D2_filtered_resampled_normal';
-HR_D3_filtered_resampled_normal = HR_D3_filtered_resampled_normal';
-PPGamp_D1_1_filtered_resampled_normal = PPGamp_D1_1_filtered_resampled_normal';
-PPGamp_D1_2_filtered_resampled_normal = PPGamp_D1_2_filtered_resampled_normal';
-PPGamp_D2_filtered_resampled_normal = PPGamp_D2_filtered_resampled_normal';
-PPGamp_D3_filtered_resampled_normal = PPGamp_D3_filtered_resampled_normal';
-
-%%
-% Now, we need to use the desired data to create iddata objects for model
-% identification
-%% Create single experiment iddata objects
-% Syntax: % data = iddata(y, u, Ts), where y is the output, u is the input,
-% and Ts is the sample time
-
-% From here on out, we will replicate the paper's approach in using
-% filtered biomarker data only
-% HR
-D1_1_HR = iddata(HR_D1_1_filtered_resampled_normal, pulse_HR_D1_1, dt);
-D1_2_HR = iddata(HR_D1_2_filtered_resampled_normal, pulse_HR_D1_2, dt);
-D2_HR = iddata(HR_D2_filtered_resampled_normal, pulse_HR_D2, dt);
-D3_HR = iddata(HR_D3_filtered_resampled_normal, pulse_HR_D3, dt);
-
-% PPGamp
-D1_1_PPGamp = iddata(PPGamp_D1_1_filtered_resampled_normal, pulse_PPGamp_D1_1, dt);
-D1_2_PPGamp = iddata(PPGamp_D1_2_filtered_resampled_normal, pulse_PPGamp_D1_2, dt);
-D2_PPGamp = iddata(PPGamp_D2_filtered_resampled_normal, pulse_PPGamp_D2, dt);
-D3_PPGamp = iddata(PPGamp_D3_filtered_resampled_normal, pulse_PPGamp_D3, dt);
+PPGamp_iddatas = SIGNAL_iddatas{2};
+D1_1_PPGamp = PPGamp_iddatas{1};
+D1_2_PPGamp = PPGamp_iddatas{2};
+D2_PPGamp = PPGamp_iddatas{3};
+D3_PPGamp = PPGamp_iddatas{4};
 
 %% Merge single experiment data objects into multi-experiment iddata objects
 % These multi-experiment iddata objects will be created to foster
@@ -441,3 +185,6 @@ Test_D2_PPGamp = merge(D1_1_PPGamp, D1_2_PPGamp, D3_PPGamp);
 % Test resultant model on D3
 Test_D3_HR = merge(D1_1_HR, D1_2_HR, D2_HR);
 Test_D3_PPGamp = merge(D1_1_PPGamp, D1_2_PPGamp, D2_PPGamp);
+
+test_HR = {Test_D1_1_HR, Test_D1_2_HR, Test_D2_HR, Test_D3_HR};
+test_PPGamp = {Test_D1_1_PPGamp, Test_D1_2_PPGamp, Test_D2_PPGamp, Test_D3_PPGamp};

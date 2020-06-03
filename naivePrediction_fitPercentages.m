@@ -15,50 +15,37 @@ loadDataName = 'Results\Example_models_ssest.mat';
 
 % Load testing data
 load(loadDataName, ...
-    'D1_1_HR', 'D1_1_PPGamp', 'D1_2_HR', 'D1_2_PPGamp', ...
-    'D2_HR', 'D2_PPGamp', 'D3_HR', 'D3_PPGamp')
+    'HR_iddatas', 'PPGamp_iddatas')
 
 
 %% Call naive predictor function for each dataset
 % Calling this function returns the naive 1-step predictions for the
 % dataset passed to it
-predicted_D1_1_HR = naivePred(D1_1_HR.OutputData);
-predicted_D1_1_PPGamp = naivePred(D1_1_PPGamp.OutputData);
+predicted_HR = {};
+predicted_PPGamp = {};
 
-predicted_D1_2_HR = naivePred(D1_2_HR.OutputData);
-predicted_D1_2_PPGamp = naivePred(D1_2_PPGamp.OutputData);
-
-predicted_D2_HR = naivePred(D2_HR.OutputData);
-predicted_D2_PPGamp = naivePred(D2_PPGamp.OutputData);
-
-predicted_D3_HR = naivePred(D3_HR.OutputData);
-predicted_D3_PPGamp = naivePred(D3_PPGamp.OutputData);
-
+for dayCounter = 1:4
+    predicted_HR{dayCounter} = naivePred(HR_iddatas{dayCounter}.OutputData);
+    predicted_PPGamp{dayCounter} = naivePred(PPGamp_iddatas{dayCounter}.OutputData);
+end
 
 %% Compute fit percentages
 % The formula for fit percentage can be simplified to be RMSE/STDEV
 % subtracted from 1 and then multiplied by 100 for a percentage. This is
 % equivalently 100*(1 - norm(predicted - real)/norm(real - mean(real)))
 
-fit_D1_1_HR = fitCalc(D1_1_HR.OutputData, predicted_D1_1_HR);
-fit_D1_1_PPGamp = fitCalc(D1_1_PPGamp.OutputData, predicted_D1_1_PPGamp);
+fit_HR = {};
+fit_PPGamp = {};
 
-fit_D1_2_HR = fitCalc(D1_2_HR.OutputData, predicted_D1_2_HR);
-fit_D1_2_PPGamp = fitCalc(D1_2_PPGamp.OutputData, predicted_D1_2_PPGamp);
-
-fit_D2_HR = fitCalc(D2_HR.OutputData, predicted_D2_HR);
-fit_D2_PPGamp = fitCalc(D2_PPGamp.OutputData, predicted_D2_PPGamp);
-
-fit_D3_HR = fitCalc(D3_HR.OutputData, predicted_D3_HR);
-fit_D3_PPGamp = fitCalc(D3_PPGamp.OutputData, predicted_D3_PPGamp);
+for dayCounter = 1:4
+    fit_HR{dayCounter} = fitCalc(HR_iddatas{dayCounter}.OutputData, predicted_HR{dayCounter});
+    fit_PPGamp{dayCounter} = fitCalc(PPGamp_iddatas{dayCounter}.OutputData, predicted_PPGamp{dayCounter});
+end
 
 
 %% Output results to excel doc
 excelResults = table(...
-    fit_D1_1_HR, fit_D1_1_PPGamp, ...
-    fit_D1_2_HR, fit_D1_2_PPGamp, ...
-    fit_D2_HR, fit_D2_PPGamp, ...
-    fit_D3_HR, fit_D3_PPGamp);
+    fit_HR, fit_PPGamp);
 
 % Write the results to the specified file
 filename = 'Results\naivePredictorFits.csv';

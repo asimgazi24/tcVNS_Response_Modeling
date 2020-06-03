@@ -13,11 +13,7 @@ clear all
 loadDataName = 'Results\Example_models_ssest.mat';
 
 % Load testing data
-load(loadDataName, ...
-    'bestModel_Test_D1_1_HR', 'bestModel_Test_D1_1_PPGamp', ...
-    'bestModel_Test_D1_2_HR', 'bestModel_Test_D1_2_PPGamp', ...
-    'bestModel_Test_D2_HR', 'bestModel_Test_D2_PPGamp', ...
-    'bestModel_Test_D3_HR', 'bestModel_Test_D3_PPGamp')
+load(loadDataName, 'bestModel_Test_HR', 'bestModel_Test_PPGamp')
 
 %% Recreate the pulse input used during modeling
 % To match the conditions used to produce the data average experimentation
@@ -42,27 +38,17 @@ inputData = filter(b, a, dummyData);
 % Regardless, this could be done by writing your own function that simply
 % solves the difference equations forward in time using a for loop,
 % ensuring that the initial state is set to the 0 vector
+pulseResponse_Test_HR = {};
+pulseResponse_Test_PPGamp = {};
 
-pulseResponse_Test_D1_1_HR = sim(bestModel_Test_D1_1_HR, inputData);
-pulseResponse_Test_D1_1_PPGamp = sim(bestModel_Test_D1_1_PPGamp, inputData);
-
-pulseResponse_Test_D1_2_HR = sim(bestModel_Test_D1_2_HR, inputData);
-pulseResponse_Test_D1_2_PPGamp = sim(bestModel_Test_D1_2_PPGamp, inputData);
-
-pulseResponse_Test_D2_HR = sim(bestModel_Test_D2_HR, inputData);
-pulseResponse_Test_D2_PPGamp = sim(bestModel_Test_D2_PPGamp, inputData);
-
-pulseResponse_Test_D3_HR = sim(bestModel_Test_D3_HR, inputData);
-pulseResponse_Test_D3_PPGamp = sim(bestModel_Test_D3_PPGamp, inputData);
-
+for dayCounter = 1:4
+    pulseResponse_Test_HR{dayCounter} = sim(bestModel_Test_HR{dayCounter}, inputData);
+    pulseResponse_Test_PPGamp{dayCounter} = sim(bestModel_Test_PPGamp{dayCounter}, inputData);
+end
 
 %% Output all responses to an excel doc (in case needed)
 % Create table with all desired values
-excelResults = table(pulseResponse_Test_D1_1_HR, ...
-    pulseResponse_Test_D1_1_PPGamp, ...
-    pulseResponse_Test_D1_2_HR, pulseResponse_Test_D1_2_PPGamp, ...
-    pulseResponse_Test_D2_HR, pulseResponse_Test_D2_PPGamp, ...
-    pulseResponse_Test_D3_HR, pulseResponse_Test_D3_PPGamp);
+excelResults = table(pulseResponse_Test_HR, pulseResponse_Test_PPGamp);
 
 % Write the results to the specified file
 writefilename = 'Results\pulseResponses.csv';
