@@ -47,12 +47,33 @@ for dayCounter = 1:4
 end
 
 %% Output all responses to an excel doc (in case needed)
-% Create table with all desired values
-excelResults = table(pulseResponse_Test_HR, pulseResponse_Test_PPGamp);
+% Since each response itself is a vector, let's first convert from cell
+% arrays back to matrices and then instead use the writematrix() function.
+% In this way, the output will be formatted as each pulse response its own
+% column vector, so 4 columns per biomarker (corresponding to the 4
+% administrations)
+
+% Initialize matrix for output
+excelResults = zeros(length(pulseResponse_Test_HR{1}), 8);
+
+% Store the simulated responses day by day
+for dayCounter = 1:4
+    excelResults(:, dayCounter) = pulseResponse_Test_HR{dayCounter};
+    excelResults(:, dayCounter+4) = pulseResponse_Test_PPGamp{dayCounter};
+end
 
 % Write the results to the specified file
+% Format:
+% Column 1 - Model tested on D1_1 HR
+% Column 2 - Model tested on D1_2 HR
+% Column 3 - Model tested on D2 HR
+% Column 4 - Model tested on D3 HR
+% Column 5 - Model tested on D1_1 PPGamp
+% Column 6 - Model tested on D1_2 PPGamp
+% Column 7 - Model tested on D2 PPGamp
+% Column 8 - Model tested on D3 PPGamp
 writefilename = 'Results\pulseResponses.csv';
-writetable(excelResults,writefilename)
+writematrix(excelResults,writefilename)
 
 %% Save MATLAB workspace
 % Save as mat file
